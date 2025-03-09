@@ -39,8 +39,8 @@ export function ReservationImport() {
   const handleImport = async () => {
     if (!file) {
       toast({
-        title: "No file selected",
-        description: "Please select a CSV file to import",
+        title: "Geen bestand geselecteerd",
+        description: "Selecteer een CSV bestand om te importeren",
         variant: "destructive",
       })
       return
@@ -50,36 +50,48 @@ export function ReservationImport() {
     setImportStatus("idle")
 
     try {
-      // Read the file
-      const text = await file.text()
+      // Maak een FormData object met het bestand
+      const formData = new FormData()
+      formData.append("file", file)
 
-      // Parse CSV
-      const result = parseCSV(text)
+      // Stuur het bestand naar de API
+      const response = await fetch("/api/reservations/import", {
+        method: "POST",
+        body: formData,
+      })
 
-      if (result.length === 0) {
-        setImportStatus("error")
-        setImportMessage("No valid data found in the CSV file")
-      } else {
-        setImportedData(result)
-        setImportStatus("success")
-        setImportMessage(`Successfully imported ${result.length} reservations`)
+      const result = await response.json()
 
-        // Here you would typically save this data to your database
-        console.log("Imported data:", result)
-
-        toast({
-          title: "Import successful",
-          description: `Imported ${result.length} reservations`,
-        })
+      if (!response.ok) {
+        throw new Error(result.error || "Er is een fout opgetreden bij het importeren")
       }
-    } catch (error) {
-      console.error("Import error:", error)
-      setImportStatus("error")
-      setImportMessage("Failed to parse the CSV file. Please ensure it's in the correct format.")
+
+      setImportedData(result.results.filter((r: any) => r.success))
+      setImportStatus("success")
+      setImportMessage(`${result.results.filter((r: any) => r.success).length} reserveringen succesvol geïmporteerd`)
 
       toast({
-        title: "Import failed",
-        description: "There was an error processing the CSV file",
+        title: "Import succesvol",
+        description: `${result.results.filter((r: any) => r.success).length} reserveringen geïmporteerd`,
+      })
+
+      // Toon waarschuwingen voor mislukte imports
+      const failures = result.results.filter((r: any) => !r.success)
+      if (failures.length > 0) {
+        toast({
+          title: "Waarschuwing",
+          description: `${failures.length} reserveringen konden niet worden geïmporteerd`,
+          variant: "destructive",
+        })
+      }
+    } catch (error: any) {
+      console.error("Import error:", error)
+      setImportStatus("error")
+      setImportMessage(error.message || "Er is een fout opgetreden bij het importeren van het bestand")
+
+      toast({
+        title: "Import mislukt",
+        description: error.message || "Er is een fout opgetreden bij het verwerken van het CSV bestand",
         variant: "destructive",
       })
     } finally {
@@ -87,54 +99,21 @@ export function ReservationImport() {
     }
   }
 
-  // Simple CSV parser
-  const parseCSV = (text: string): CSVReservation[] => {
-    const lines = text.split("\n")
-    if (lines.length <= 1) {
-      throw new Error("CSV file is empty or has only headers")
-    }
-
-    const headers = lines[0].split(",").map((h) => h.trim())
-
-    const results: CSVReservation[] = []
-
-    for (let i = 1; i < lines.length; i++) {
-      if (!lines[i].trim()) continue
-
-      const values = lines[i].split(",").map((v) => v.trim())
-
-      if (values.length !== headers.length) {
-        console.warn(`Line ${i} has ${values.length} values, expected ${headers.length}`)
-        continue
-      }
-
-      const reservation = {} as any
-
-      headers.forEach((header, index) => {
-        reservation[header] = values[index]
-      })
-
-      results.push(reservation as CSVReservation)
-    }
-
-    return results
-  }
-
   return (
     <div className="space-y-4">
       <div className="grid w-full max-w-sm items-center gap-1.5">
         <Label htmlFor="csv-file">Upload Reservation CSV</Label>
         <Input id="csv-file" type="file" accept=".csv" onChange={handleFileChange} />
-        <p className="text-xs text-muted-foreground">Upload the CSV export from raidres.fly.dev</p>
+        <p className="text-xs text-muted-foreground">Upload het CSV bestand geëxporteerd uit Excel</p>
       </div>
 
       <Button onClick={handleImport} disabled={!file || isUploading} className="w-full max-w-sm">
         {isUploading ? (
-          "Importing..."
+          "Importeren..."
         ) : (
           <>
             <FileUp className="mr-2 h-4 w-4" />
-            Import Reservations
+            Importeer Reserveringen
           </>
         )}
       </Button>
@@ -145,7 +124,7 @@ export function ReservationImport() {
           className="max-w-sm bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400"
         >
           <Check className="h-4 w-4" />
-          <AlertTitle>Success</AlertTitle>
+          <AlertTitle>Succes</AlertTitle>
           <AlertDescription>{importMessage}</AlertDescription>
         </Alert>
       )}
@@ -153,24 +132,24 @@ export function ReservationImport() {
       {importStatus === "error" && (
         <Alert variant="destructive" className="max-w-sm">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>Fout</AlertTitle>
           <AlertDescription>{importMessage}</AlertDescription>
         </Alert>
       )}
 
       {importedData.length > 0 && (
         <div className="mt-4">
-          <h3 className="mb-2 text-sm font-medium">Preview of imported data:</h3>
+          <h3 className="mb-2 text-sm font-medium">Voorbeeld van geïmporteerde data:</h3>
           <div className="rounded-md border p-2">
-            <p className="text-xs text-muted-foreground">{importedData.length} reservations imported</p>
+            <p className="text-xs text-muted-foreground">{importedData.length} reserveringen geïmporteerd</p>
             <ul className="mt-2 text-xs">
               {importedData.slice(0, 3).map((res, index) => (
                 <li key={index} className="mb-1">
-                  {res.Attendee} ({res.Class}) - {res.Item} from {res.Boss}
+                  {res.Attendee} ({res.Class}) - {res.Item} van {res.Boss}
                 </li>
               ))}
               {importedData.length > 3 && (
-                <li className="text-muted-foreground">...and {importedData.length - 3} more</li>
+                <li className="text-muted-foreground">...en nog {importedData.length - 3} meer</li>
               )}
             </ul>
           </div>

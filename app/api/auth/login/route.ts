@@ -21,11 +21,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Converteer het binaire wachtwoord naar een string
-    const hashedPassword = Buffer.from(user.password).toString();
-
-    // Verifieer het wachtwoord
-    const isValidPassword = await bcrypt.compare(password, hashedPassword);
+    // Verifieer het wachtwoord direct (geen conversie nodig)
+    const isValidPassword = await bcrypt.compare(password, user.password);
 
     if (!isValidPassword) {
       return NextResponse.json(

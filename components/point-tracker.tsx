@@ -6,8 +6,17 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, Plus, Minus } from "lucide-react"
+import { Search, Plus, Minus, ChevronDown } from "lucide-react"
 import { useAuth } from "./auth-provider"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 // Sample data structure - this would be stored in your database
 type PointRecord = {
@@ -16,6 +25,7 @@ type PointRecord = {
   playerClass: string
   item: string
   boss: string
+  raid: string
   points: number
   lastUpdated: string
 }
@@ -34,6 +44,16 @@ const classColors: Record<string, string> = {
   "Death Knight": "bg-[#C41E3A] text-white",
 }
 
+// Raid lijst
+const raids = [
+  "Molten Core",
+  "Onyxia's Lair",
+  "Blackwing Lair",
+  "Temple of Ahn'Qiraj",
+  "Naxxramas",
+  "Tower of Karazhan"
+]
+
 // Sample data - would be replaced with actual data from your database
 const samplePointRecords: PointRecord[] = [
   {
@@ -42,6 +62,7 @@ const samplePointRecords: PointRecord[] = [
     playerClass: "Priest",
     item: "Striker's Mark",
     boss: "Magmadar",
+    raid: "Molten Core",
     points: 20,
     lastUpdated: "2025-03-09",
   },
@@ -51,6 +72,7 @@ const samplePointRecords: PointRecord[] = [
     playerClass: "Mage",
     item: "Talisman of Ephemeral Power",
     boss: "Golemagg",
+    raid: "Molten Core",
     points: 30,
     lastUpdated: "2025-03-09",
   },
@@ -60,6 +82,7 @@ const samplePointRecords: PointRecord[] = [
     playerClass: "Warrior",
     item: "Onslaught Girdle",
     boss: "Ragnaros",
+    raid: "Molten Core",
     points: 10,
     lastUpdated: "2025-03-09",
   },
@@ -69,6 +92,7 @@ const samplePointRecords: PointRecord[] = [
     playerClass: "Rogue",
     item: "Perdition's Blade",
     boss: "Ragnaros",
+    raid: "Molten Core",
     points: 40,
     lastUpdated: "2025-03-09",
   },
@@ -78,21 +102,56 @@ const samplePointRecords: PointRecord[] = [
     playerClass: "Priest",
     item: "Cauterizing Band",
     boss: "Lucifron",
+    raid: "Molten Core",
     points: 0,
     lastUpdated: "2025-03-09",
   },
+  {
+    id: 6,
+    player: "Nameyorprice",
+    playerClass: "Priest",
+    item: "Neltharion's Tear",
+    boss: "Nefarian",
+    raid: "Blackwing Lair",
+    points: 30,
+    lastUpdated: "2025-03-09",
+  },
+  {
+    id: 7,
+    player: "Bigcrits",
+    playerClass: "Mage",
+    item: "Staff of the Shadow Flame",
+    boss: "Nefarian",
+    raid: "Blackwing Lair",
+    points: 20,
+    lastUpdated: "2025-03-09",
+  },
+  {
+    id: 8,
+    player: "Tankenstein",
+    playerClass: "Warrior",
+    item: "Head of Onyxia",
+    boss: "Onyxia",
+    raid: "Onyxia's Lair",
+    points: 15,
+    lastUpdated: "2025-03-09",
+  }
 ]
 
 export function PointTracker() {
   const [pointRecords, setPointRecords] = useState<PointRecord[]>(samplePointRecords)
   const [searchQuery, setSearchQuery] = useState("")
+  const [selectedRaid, setSelectedRaid] = useState<string>("Molten Core")
   const { isAdmin } = useAuth()
 
   const filteredRecords = pointRecords.filter(
     (record) =>
-      record.player.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      record.item.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      record.boss.toLowerCase().includes(searchQuery.toLowerCase()),
+      (record.raid === selectedRaid) &&
+      (
+        record.player.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        record.item.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        record.boss.toLowerCase().includes(searchQuery.toLowerCase())
+      )
   )
 
   // These functions will only be available to admins
@@ -132,26 +191,42 @@ export function PointTracker() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search by player, item, or boss..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="h-9"
-        />
+      <div className="flex items-center gap-4">
+        <div className="flex-1">
+          <Select value={selectedRaid} onValueChange={setSelectedRaid}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecteer een raid" />
+            </SelectTrigger>
+            <SelectContent>
+              {raids.map((raid) => (
+                <SelectItem key={raid} value={raid}>
+                  {raid}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex-[2] flex items-center gap-2">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Zoeken op speler, item of baas..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-9"
+          />
+        </div>
       </div>
 
       <div className="rounded-md border">
-        <ScrollArea className="h-[400px]">
+        <ScrollArea className="h-[500px]">
           <Table>
-            <TableHeader className="sticky top-0 bg-background">
+            <TableHeader className="bg-background sticky top-0">
               <TableRow>
-                <TableHead>Player</TableHead>
+                <TableHead>Speler</TableHead>
                 <TableHead>Item</TableHead>
-                <TableHead>Boss</TableHead>
-                <TableHead className="text-right">Points</TableHead>
-                {isAdmin && <TableHead className="text-right">Actions</TableHead>}
+                <TableHead>Baas</TableHead>
+                <TableHead className="text-right">Punten</TableHead>
+                {isAdmin && <TableHead className="text-right">Acties</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -178,7 +253,7 @@ export function PointTracker() {
                             variant="outline"
                             size="icon"
                             onClick={() => handleAddPoints(record.id)}
-                            title="Add 10 points"
+                            title="10 punten toevoegen"
                           >
                             <Plus className="h-4 w-4" />
                           </Button>
@@ -186,7 +261,7 @@ export function PointTracker() {
                             variant="outline"
                             size="icon"
                             onClick={() => handleSubtractPoints(record.id)}
-                            title="Subtract 10 points"
+                            title="10 punten aftrekken"
                           >
                             <Minus className="h-4 w-4" />
                           </Button>
@@ -200,8 +275,8 @@ export function PointTracker() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 5 : 4} className="h-24 text-center">
-                    No point records found.
+                  <TableCell colSpan={isAdmin ? 5 : 4} className="h-24 text-center text-muted-foreground">
+                    Geen puntenrecords gevonden voor deze raid.
                   </TableCell>
                 </TableRow>
               )}
