@@ -4,7 +4,8 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["mongoDb"]
 }
 
 model Player {
@@ -21,7 +22,7 @@ model Player {
 model User {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   username  String   @unique
-  password  Bytes
+  password  String
   role      String   @default("user")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -13,11 +13,11 @@ export async function POST(request: Request) {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Maak de gebruiker aan
+    // Maak de gebruiker aan met het wachtwoord als Buffer
     const user = await prisma.user.create({
       data: {
         username,
-        password: hashedPassword,
+        password: Buffer.from(hashedPassword),
         role: role || 'user', // Standaard rol is 'user' als er geen rol is opgegeven
       },
     });
