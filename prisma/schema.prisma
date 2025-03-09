@@ -1,0 +1,59 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Player {
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  name         String        @unique
+  playerClass  String
+  role         String
+  reservations Reservation[]
+  points       Point[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  username  String   @unique
+  password  Bytes
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Reservation {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  player    Player   @relation(fields: [playerId], references: [id])
+  playerId  String   @db.ObjectId
+  item      String
+  boss      String
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Point {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  player    Player   @relation(fields: [playerId], references: [id])
+  playerId  String   @db.ObjectId
+  amount    Int
+  reason    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Raid {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  date         DateTime
+  killedBosses String[]
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+} 

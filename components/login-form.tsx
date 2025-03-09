@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
+import { useRouter } from "next/navigation"
 
 const formSchema = z.object({
   username: z.string().min(2, {
@@ -23,6 +24,7 @@ const formSchema = z.object({
 
 export function LoginForm() {
   const { login } = useAuth()
+  const router = useRouter()
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
@@ -42,6 +44,8 @@ export function LoginForm() {
       const success = await login(values.username, values.password)
       if (!success) {
         setError("Invalid username or password")
+      } else {
+        router.push("/")
       }
     } catch (error) {
       console.error("Login error:", error)

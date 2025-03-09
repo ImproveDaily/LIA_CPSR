@@ -7,7 +7,7 @@ export type UserRole = "admin" | "member" | "guest"
 
 interface User {
   id: string
-  name: string
+  username: string
   role: UserRole
 }
 
@@ -20,12 +20,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
-
-// Mock users for demo purposes - in a real app, this would come from a database
-const MOCK_USERS = [
-  { id: "1", name: "Admin User", role: "admin" as UserRole, password: "admin123" },
-  { id: "2", name: "Regular Member", role: "member" as UserRole, password: "member123" },
-]
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -44,19 +38,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = async (username: string, password: string) => {
-    // Mock authentication
-    const matchedUser = MOCK_USERS.find(
-      (u) => u.name.toLowerCase() === username.toLowerCase() && u.password === password,
-    )
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
 
-    if (matchedUser) {
-      const { password, ...userWithoutPassword } = matchedUser
-      setUser(userWithoutPassword)
-      localStorage.setItem("wow-cpsr-user", JSON.stringify(userWithoutPassword))
-      return true
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Login failed:', data.error);
+        return false;
+      }
+
+      setUser(data.user);
+      localStorage.setItem("wow-cpsr-user", JSON.stringify(data.user));
+      return true;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
     }
-
-    return false
   }
 
   const logout = () => {
