@@ -68,6 +68,7 @@ export function PointTracker() {
 
   useEffect(() => {
     fetchReservations()
+    fetchPoints()
   }, [selectedRaid])
 
   const fetchReservations = async () => {
@@ -121,57 +122,47 @@ export function PointTracker() {
     }
   }
 
-  const handleAddPoints = async (playerId: string, amount: number) => {
+  const fetchPoints = async () => {
+    try {
+      const response = await fetch("/api/points")
+      if (!response.ok) throw new Error("Failed to fetch points")
+      
+      const data = await response.json()
+      setPlayerPoints(data)
+    } catch (err) {
+      console.error("Error fetching points:", err)
+    }
+  }
+
+  const handleAddPoints = async (playerId: string, amount: number, item: string) => {
     try {
       const response = await fetch("/api/points", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerId, amount: 10 })
+        body: JSON.stringify({ playerId, amount: 10, item })
       })
       
       if (!response.ok) throw new Error("Failed to add points")
       
-      // Update lokale state
-      setPlayerPoints(prev => prev.map(p => 
-        p.playerId === playerId 
-          ? { 
-              ...p, 
-              totalPoints: p.totalPoints + 10,
-              items: p.items.map(item => ({
-                ...item,
-                points: item.points + 10
-              }))
-            }
-          : p
-      ))
+      // Haal de punten opnieuw op
+      await fetchPoints()
     } catch (err) {
       console.error("Error adding points:", err)
     }
   }
 
-  const handleRemovePoints = async (playerId: string, amount: number) => {
+  const handleRemovePoints = async (playerId: string, amount: number, item: string) => {
     try {
       const response = await fetch("/api/points", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerId, amount: -10 })
+        body: JSON.stringify({ playerId, amount: -10, item })
       })
       
       if (!response.ok) throw new Error("Failed to remove points")
       
-      // Update lokale state
-      setPlayerPoints(prev => prev.map(p => 
-        p.playerId === playerId 
-          ? { 
-              ...p, 
-              totalPoints: p.totalPoints - 10,
-              items: p.items.map(item => ({
-                ...item,
-                points: item.points - 10
-              }))
-            }
-          : p
-      ))
+      // Haal de punten opnieuw op
+      await fetchPoints()
     } catch (err) {
       console.error("Error removing points:", err)
     }
@@ -185,8 +176,8 @@ export function PointTracker() {
       
       if (!response.ok) throw new Error("Failed to delete points")
       
-      // Update lokale state
-      setPlayerPoints(prev => prev.filter(p => p.playerId !== playerId))
+      // Haal de punten opnieuw op
+      await fetchPoints()
     } catch (err) {
       console.error("Error deleting points:", err)
     }
@@ -242,42 +233,47 @@ export function PointTracker() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredReservations.map((reservation) => (
-                <TableRow key={reservation.id}>
-                  <TableCell>{reservation.player.name}</TableCell>
-                  <TableCell>{reservation.item}</TableCell>
-                  <TableCell>{reservation.boss}</TableCell>
-                  <TableCell>{reservation.points}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleAddPoints(reservation.playerId, 10)}
-                        className="bg-green-500 hover:bg-green-600 text-white"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleRemovePoints(reservation.playerId, 10)}
-                        className="bg-red-500 hover:bg-red-600 text-white"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleDeletePoints(reservation.playerId)}
-                        className="bg-gray-500 hover:bg-gray-600 text-white"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {filteredReservations.map((reservation) => {
+                const playerPoint = playerPoints.find(p => p.playerId === reservation.playerId)
+                const itemPoints = playerPoint?.items.find(i => i.item === reservation.item)?.points || 0
+                
+                return (
+                  <TableRow key={reservation.id}>
+                    <TableCell>{reservation.player.name}</TableCell>
+                    <TableCell>{reservation.item}</TableCell>
+                    <TableCell>{reservation.boss}</TableCell>
+                    <TableCell>{itemPoints}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleAddPoints(reservation.playerId, 10, reservation.item)}
+                          className="bg-green-500 hover:bg-green-600 text-white"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleRemovePoints(reservation.playerId, 10, reservation.item)}
+                          className="bg-red-500 hover:bg-red-600 text-white"
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleDeletePoints(reservation.playerId)}
+                          className="bg-gray-500 hover:bg-gray-600 text-white"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </ScrollArea>

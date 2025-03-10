@@ -34,44 +34,54 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
-    // Haal alle punten op voor een speler
-    const { searchParams } = new URL(req.url);
-    const playerId = searchParams.get("playerId");
-
-    if (!playerId) {
-      return new NextResponse(
-        JSON.stringify({ error: "Player ID is required" }),
-        { status: 400 }
-      );
-    }
-
+    // Haal alle punten op
     const points = await prisma.point.findMany({
-      where: {
-        playerId
-      },
       orderBy: {
         createdAt: "desc"
       }
     });
 
-    // Groepeer punten per item
-    const pointsByItem = points.reduce((acc, point) => {
-      if (!acc[point.item]) {
-        acc[point.item] = 0;
+    // Groepeer punten per speler en item
+    const pointsByPlayer = points.reduce((acc, point) => {
+      if (!acc[point.playerId]) {
+        acc[point.playerId] = {
+          totalPoints: 0,
+          items: {}
+        };
       }
-      acc[point.item] += point.amount;
+      
+      if (!acc[point.playerId].items[point.item]) {
+        acc[point.playerId].items[point.item] = 0;
+      }
+      
+      acc[point.playerId].items[point.item] += point.amount;
+      acc[point.playerId].totalPoints += point.amount;
+      
       return acc;
-    }, {} as Record<string, number>);
+    }, {} as Record<string, { totalPoints: number, items: Record<string, number> }>);
 
-    // Bereken totaal punten
-    const totalPoints = points.reduce((sum, point) => sum + point.amount, 0);
+    // Haal speler informatie op
+    const players = await prisma.player.findMany({
+      where: {
+        id: {
+          in: Object.keys(pointsByPlayer)
+        }
+      }
+    });
+
+    // Combineer speler informatie met punten
+    const result = players.map(player => ({
+      playerId: player.id,
+      playerName: player.name,
+      totalPoints: pointsByPlayer[player.id].totalPoints,
+      items: Object.entries(pointsByPlayer[player.id].items).map(([item, points]) => ({
+        item,
+        points
+      }))
+    }));
 
     return new NextResponse(
-      JSON.stringify({ 
-        points,
-        totalPoints,
-        pointsByItem
-      }),
+      JSON.stringify(result),
       { status: 200 }
     );
 
