@@ -33,6 +33,7 @@ model Reservation {
   playerId  String   @db.ObjectId
   item      String
   boss      String
+  raid      String
   date      DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -40,12 +41,15 @@ model Reservation {
 
 model Point {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  player    Player   @relation(fields: [playerId], references: [id])
   playerId  String   @db.ObjectId
   amount    Int
+  item      String
   reason    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  player    Player   @relation(fields: [playerId], references: [id])
+
+  @@index([playerId])
 }
 
 model Raid {

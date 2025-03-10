@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, FileUp, Check } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { RAIDS, type Raid } from "@/lib/constants"
 
 type CSVReservation = {
   ID: string
@@ -16,13 +18,14 @@ type CSVReservation = {
   Boss: string
   Attendee: string
   Class: string
-  Specialization: string
+  Role: string
   Comment: string | null
   "Date (GMT)": string
 }
 
 export function ReservationImport() {
   const [file, setFile] = useState<File | null>(null)
+  const [selectedRaid, setSelectedRaid] = useState<Raid | "">("")
   const [isUploading, setIsUploading] = useState(false)
   const [importStatus, setImportStatus] = useState<"idle" | "success" | "error">("idle")
   const [importMessage, setImportMessage] = useState("")
@@ -46,13 +49,23 @@ export function ReservationImport() {
       return
     }
 
+    if (!selectedRaid) {
+      toast({
+        title: "Geen raid geselecteerd",
+        description: "Selecteer eerst een raid voordat je het bestand importeert",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsUploading(true)
     setImportStatus("idle")
 
     try {
-      // Maak een FormData object met het bestand
+      // Maak een FormData object met het bestand en raid
       const formData = new FormData()
       formData.append("file", file)
+      formData.append("raid", selectedRaid)
 
       // Stuur het bestand naar de API
       const response = await fetch("/api/reservations/import", {
@@ -102,12 +115,35 @@ export function ReservationImport() {
   return (
     <div className="space-y-4">
       <div className="grid w-full max-w-sm items-center gap-1.5">
+        <Label htmlFor="raid-select">Selecteer Raid</Label>
+        <Select 
+          value={selectedRaid} 
+          onValueChange={(value: string) => {
+            if (RAIDS.includes(value as Raid) || value === "") {
+              setSelectedRaid(value as Raid | "")
+            }
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Kies een raid..." />
+          </SelectTrigger>
+          <SelectContent>
+            {RAIDS.map((raid) => (
+              <SelectItem key={raid} value={raid}>
+                {raid}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid w-full max-w-sm items-center gap-1.5">
         <Label htmlFor="csv-file">Upload Reservation CSV</Label>
         <Input id="csv-file" type="file" accept=".csv" onChange={handleFileChange} />
         <p className="text-xs text-muted-foreground">Upload het CSV bestand geëxporteerd uit Excel</p>
       </div>
 
-      <Button onClick={handleImport} disabled={!file || isUploading} className="w-full max-w-sm">
+      <Button onClick={handleImport} disabled={!file || !selectedRaid || isUploading} className="w-full max-w-sm">
         {isUploading ? (
           "Importeren..."
         ) : (
