@@ -203,11 +203,18 @@ export function PointTracker() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <div className="flex-1">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <h2 className="text-2xl font-bold">Point Standings</h2>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
+          <Input
+            placeholder="Zoek speler..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full sm:w-[200px]"
+          />
           <Select value={selectedRaid} onValueChange={setSelectedRaid}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecteer een raid" />
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="Selecteer raid" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Alle raids</SelectItem>
@@ -219,106 +226,61 @@ export function PointTracker() {
             </SelectContent>
           </Select>
         </div>
-        <div className="flex-[2] flex items-center gap-2">
-          <Search className="h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Zoeken op speler, item of baas..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-9"
-          />
-        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Reserveringen tabel */}
-        <div className="border rounded-lg">
-          <ScrollArea className="h-[400px]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Speler</TableHead>
-                  <TableHead>Item</TableHead>
-                  <TableHead>Boss</TableHead>
-                  <TableHead>Raid</TableHead>
-                  <TableHead>Datum</TableHead>
-                  <TableHead>Punten</TableHead>
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Reserveringen en Punten</h3>
+        <ScrollArea className="h-[600px] rounded-md border p-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Speler</TableHead>
+                <TableHead>Item</TableHead>
+                <TableHead>Boss</TableHead>
+                <TableHead>Punten</TableHead>
+                <TableHead>Acties</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredReservations.map((reservation) => (
+                <TableRow key={reservation.id}>
+                  <TableCell>{reservation.player.name}</TableCell>
+                  <TableCell>{reservation.item}</TableCell>
+                  <TableCell>{reservation.boss}</TableCell>
+                  <TableCell>{reservation.points}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleAddPoints(reservation.playerId, 10)}
+                        className="bg-green-500 hover:bg-green-600 text-white"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleRemovePoints(reservation.playerId, 10)}
+                        className="bg-red-500 hover:bg-red-600 text-white"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleDeletePoints(reservation.playerId)}
+                        className="bg-gray-500 hover:bg-gray-600 text-white"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredReservations.map((reservation) => (
-                  <TableRow key={reservation.id}>
-                    <TableCell>{reservation.player.name}</TableCell>
-                    <TableCell>{reservation.item}</TableCell>
-                    <TableCell>{reservation.boss}</TableCell>
-                    <TableCell>{reservation.raid}</TableCell>
-                    <TableCell>{new Date(reservation.date).toLocaleDateString()}</TableCell>
-                    <TableCell>{reservation.points}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </ScrollArea>
-        </div>
-
-        {/* Punten overzicht */}
-        <div className="border rounded-lg">
-          <ScrollArea className="h-[400px]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Speler</TableHead>
-                  <TableHead>Item</TableHead>
-                  <TableHead>Punten</TableHead>
-                  <TableHead>Acties</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {playerPoints.map((player) => (
-                  <TableRow key={player.playerId}>
-                    <TableCell>{player.playerName}</TableCell>
-                    <TableCell>
-                      <ul>
-                        {player.items.map((item, index) => (
-                          <li key={index}>{item.item}: {item.points}</li>
-                        ))}
-                      </ul>
-                    </TableCell>
-                    <TableCell>{player.totalPoints}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleAddPoints(player.playerId, 10)}
-                          className="bg-green-500 hover:bg-green-600 text-white"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleRemovePoints(player.playerId, 10)}
-                          className="bg-red-500 hover:bg-red-600 text-white"
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleDeletePoints(player.playerId)}
-                          className="bg-gray-500 hover:bg-gray-600 text-white"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </ScrollArea>
-        </div>
+              ))}
+            </TableBody>
+          </Table>
+        </ScrollArea>
       </div>
     </div>
   )
