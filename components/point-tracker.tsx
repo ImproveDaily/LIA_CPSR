@@ -124,47 +124,71 @@ export function PointTracker() {
 
   const fetchPoints = async () => {
     try {
+      setLoading(true)
+      setError(null)
       const response = await fetch("/api/points")
-      if (!response.ok) throw new Error("Failed to fetch points")
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to fetch points")
+      }
       
       const data = await response.json()
       setPlayerPoints(data)
     } catch (err) {
       console.error("Error fetching points:", err)
+      setError(err instanceof Error ? err.message : "Er is een fout opgetreden bij het ophalen van de punten")
+    } finally {
+      setLoading(false)
     }
   }
 
   const handleAddPoints = async (playerId: string, amount: number, item: string) => {
     try {
+      setLoading(true)
+      setError(null)
       const response = await fetch("/api/points", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ playerId, amount: 10, item })
       })
       
-      if (!response.ok) throw new Error("Failed to add points")
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to add points")
+      }
       
       // Haal de punten opnieuw op
       await fetchPoints()
     } catch (err) {
       console.error("Error adding points:", err)
+      setError(err instanceof Error ? err.message : "Er is een fout opgetreden bij het toevoegen van punten")
+    } finally {
+      setLoading(false)
     }
   }
 
   const handleRemovePoints = async (playerId: string, amount: number, item: string) => {
     try {
+      setLoading(true)
+      setError(null)
       const response = await fetch("/api/points", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ playerId, amount: -10, item })
       })
       
-      if (!response.ok) throw new Error("Failed to remove points")
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to remove points")
+      }
       
       // Haal de punten opnieuw op
       await fetchPoints()
     } catch (err) {
       console.error("Error removing points:", err)
+      setError(err instanceof Error ? err.message : "Er is een fout opgetreden bij het verwijderen van punten")
+    } finally {
+      setLoading(false)
     }
   }
 

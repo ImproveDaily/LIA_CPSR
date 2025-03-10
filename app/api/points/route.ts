@@ -1,11 +1,100 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
 
-export async function POST(req: Request) {
+export async function GET() {
   try {
-    const { playerId, amount, item } = await req.json();
+    console.log("GET /api/points - Starting request");
+    const session = await getServerSession(authOptions);
+    console.log("Session:", session);
+
+    if (!session) {
+      console.log("No session found");
+      return NextResponse.json(
+        { error: "Niet ingelogd" },
+        { status: 401 }
+      );
+    }
+
+    // Haal alle punten op
+    console.log("Fetching points from database");
+    const points = await prisma.point.findMany({
+      include: {
+        player: true
+      }
+    });
+    console.log("Found points:", points);
+
+    // Bereken punten per speler
+    const pointsMap = new Map<string, { name: string, points: number, items: { item: string, points: number }[] }>();
+    
+    points.forEach((point) => {
+      const current = pointsMap.get(point.playerId) || { 
+        name: point.player.name, 
+        points: 0,
+        items: []
+      };
+      
+      // Update items
+      const existingItem = current.items.find(i => i.item === point.item);
+      if (existingItem) {
+        existingItem.points += point.amount;
+      } else {
+        current.items.push({ item: point.item, points: point.amount });
+      }
+      
+      // Update total points
+      current.points += point.amount;
+      
+      pointsMap.set(point.playerId, current);
+    });
+    
+    const pointsArray = Array.from(pointsMap.entries()).map(([id, data]) => ({
+      playerId: id,
+      playerName: data.name,
+      totalPoints: data.points,
+      items: data.items
+    }));
+
+    console.log("Returning points array:", pointsArray);
+    return NextResponse.json(pointsArray);
+  } catch (error: any) {
+    console.error("Error in GET /api/points:", error);
+    return NextResponse.json(
+      { error: "Er is een fout opgetreden bij het ophalen van de punten" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    console.log("POST /api/points - Starting request");
+    const session = await getServerSession(authOptions);
+    console.log("Session:", session);
+
+    if (!session) {
+      console.log("No session found");
+      return NextResponse.json(
+        { error: "Niet ingelogd" },
+        { status: 401 }
+      );
+    }
+
+    const { playerId, amount, item } = await request.json();
+    console.log("Request body:", { playerId, amount, item });
+
+    if (!playerId || !amount || !item) {
+      console.log("Missing parameters");
+      return NextResponse.json(
+        { error: "Ontbrekende parameters" },
+        { status: 400 }
+      );
+    }
 
     // Maak een nieuwe point record
+    console.log("Creating new point record");
     const point = await prisma.point.create({
       data: {
         playerId,
@@ -14,81 +103,13 @@ export async function POST(req: Request) {
         reason: amount > 0 ? "Punten toegevoegd" : "Punten afgetrokken"
       }
     });
+    console.log("Created point:", point);
 
-    return new NextResponse(
-      JSON.stringify({ 
-        message: "Punten succesvol bijgewerkt",
-        point 
-      }),
-      { status: 200 }
-    );
-
+    return NextResponse.json(point);
   } catch (error: any) {
-    console.error("Points error:", error);
-    return new NextResponse(
-      JSON.stringify({ error: error.message }),
-      { status: 500 }
-    );
-  }
-}
-
-export async function GET(req: Request) {
-  try {
-    // Haal alle punten op
-    const points = await prisma.point.findMany({
-      orderBy: {
-        createdAt: "desc"
-      }
-    });
-
-    // Groepeer punten per speler en item
-    const pointsByPlayer = points.reduce((acc, point) => {
-      if (!acc[point.playerId]) {
-        acc[point.playerId] = {
-          totalPoints: 0,
-          items: {}
-        };
-      }
-      
-      if (!acc[point.playerId].items[point.item]) {
-        acc[point.playerId].items[point.item] = 0;
-      }
-      
-      acc[point.playerId].items[point.item] += point.amount;
-      acc[point.playerId].totalPoints += point.amount;
-      
-      return acc;
-    }, {} as Record<string, { totalPoints: number, items: Record<string, number> }>);
-
-    // Haal speler informatie op
-    const players = await prisma.player.findMany({
-      where: {
-        id: {
-          in: Object.keys(pointsByPlayer)
-        }
-      }
-    });
-
-    // Combineer speler informatie met punten
-    const result = players.map(player => ({
-      playerId: player.id,
-      playerName: player.name,
-      totalPoints: pointsByPlayer[player.id].totalPoints,
-      items: Object.entries(pointsByPlayer[player.id].items).map(([item, points]) => ({
-        item,
-        points
-      }))
-    }));
-
-    return new NextResponse(
-      JSON.stringify(result),
-      { status: 200 }
-    );
-
-  } catch (error: any) {
-    console.error("Points error:", error);
-    return new NextResponse(
-      JSON.stringify({ error: error.message }),
+    console.error("Error in POST /api/points:", error);
+    return NextResponse.json(
+      { error: "Er is een fout opgetreden bij het toevoegen van punten" },
       { status: 500 }
     );
   }
