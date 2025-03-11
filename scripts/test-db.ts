@@ -1,26 +1,26 @@
-import { prisma } from '../lib/db';
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 
 async function main() {
   try {
-    // Test player toevoegen
-    const player = await prisma.player.create({
-      data: {
-        name: 'TestSpeler',
-        playerClass: 'Warrior',
-        role: 'Tank',
-      },
-    });
-    console.log('Test speler toegevoegd:', player);
-
     // Alle spelers ophalen
-    const players = await prisma.player.findMany();
-    console.log('Alle spelers:', players);
+    const players = await prisma.player.findMany()
+    console.log('Spelers in database:', players)
+
+    // Alle reserveringen ophalen met speler informatie
+    const reservations = await prisma.reservation.findMany({
+      include: {
+        player: true
+      }
+    })
+    console.log('\nReserveringen in database:', reservations)
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Database error:', error)
   } finally {
-    await prisma.$disconnect();
+    await prisma.$disconnect()
   }
 }
 
-main(); 
+main() 

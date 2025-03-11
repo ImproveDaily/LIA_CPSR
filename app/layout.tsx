@@ -1,28 +1,31 @@
-import type React from "react"
-import "@/app/globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import { AuthProvider } from "@/components/auth-provider"
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { NextAuthProvider } from "./providers";
+import { AuthProvider } from "@/components/auth-provider";
+
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "LIA CPSR",
+  description: "LIA CPSR - Raid Points Systeem",
+  generator: 'v0.dev'
+};
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en">
-      <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <AuthProvider>{children}</AuthProvider>
-        </ThemeProvider>
+    <html lang="nl">
+      <body className={inter.className}>
+        <NextAuthProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </NextAuthProvider>
       </body>
     </html>
-  )
+  );
 }
-
-
-
-import './globals.css'
-
-export const metadata = {
-      generator: 'v0.dev'
-    };
