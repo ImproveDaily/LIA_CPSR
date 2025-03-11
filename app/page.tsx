@@ -10,7 +10,7 @@ import { AppHeader } from "@/components/app-header"
 import { ProtectedPage } from "@/components/protected-page"
 
 export default function Home() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isAdmin } = useAuth()
 
   if (!isAuthenticated) return null
 
@@ -44,16 +44,18 @@ export default function Home() {
               </Card>
 
               <div className="grid gap-6 md:grid-cols-12">
-                <Card className="md:col-span-4">
-                  <CardHeader>
-                    <CardTitle>Import Reservations</CardTitle>
-                    <CardDescription>Import reservations from the raidres.fly.dev CSV export</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ReservationImport />
-                  </CardContent>
-                </Card>
-                <Card className="md:col-span-8">
+                {isAdmin && (
+                  <Card className="md:col-span-4">
+                    <CardHeader>
+                      <CardTitle>Import Reservations</CardTitle>
+                      <CardDescription>Import reservations from the raidres.fly.dev CSV export</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ReservationImport />
+                    </CardContent>
+                  </Card>
+                )}
+                <Card className={isAdmin ? "md:col-span-8" : "md:col-span-12"}>
                   <CardHeader>
                     <CardTitle>Current Point Standings</CardTitle>
                     <CardDescription>Overview of current point standings per player and item</CardDescription>

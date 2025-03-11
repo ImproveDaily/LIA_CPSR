@@ -47,6 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (username: string, password: string) => {
     try {
+      // Admin login
       if (username === 'admin' && password === 'admin') {
         const newUser = {
           id: '1',
@@ -56,8 +57,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(newUser)
         setIsAuthenticated(true)
         localStorage.setItem("wow-cpsr-user", JSON.stringify(newUser))
+        router.push('/')
         return true
       }
+      
+      // Member login
+      if (username === 'user' && password === 'user') {
+        const newUser = {
+          id: '2',
+          username: 'user',
+          role: 'member' as UserRole
+        }
+        setUser(newUser)
+        setIsAuthenticated(true)
+        localStorage.setItem("wow-cpsr-user", JSON.stringify(newUser))
+        router.push('/')
+        return true
+      }
+      
       return false
     } catch (error) {
       console.error("Login failed", error)
