@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = 'force-static'
-export const revalidate = 0
+export const revalidate = false
 
 export async function POST(req: Request) {
   try {
@@ -23,14 +23,24 @@ export async function POST(req: Request) {
         message: "Punten succesvol bijgewerkt",
         point 
       }),
-      { status: 200 }
+      { 
+        status: 200,
+        headers: {
+          'Cache-Control': 'public, s-maxage=1, stale-while-revalidate=59'
+        }
+      }
     );
 
   } catch (error: any) {
     console.error("Points error:", error);
     return new NextResponse(
       JSON.stringify({ error: error.message }),
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      }
     );
   }
 }
@@ -46,19 +56,21 @@ export async function GET(req: Request) {
 
     // Groepeer punten per speler en item
     const pointsByPlayer = points.reduce((acc, point) => {
-      if (!acc[point.playerId]) {
-        acc[point.playerId] = {
+      const playerId = point.playerId.toString();
+      if (!acc[playerId]) {
+        acc[playerId] = {
           totalPoints: 0,
           items: {}
         };
       }
       
-      if (!acc[point.playerId].items[point.item]) {
-        acc[point.playerId].items[point.item] = 0;
+      const itemKey = point.item || 'unknown';
+      if (!acc[playerId].items[itemKey]) {
+        acc[playerId].items[itemKey] = 0;
       }
       
-      acc[point.playerId].items[point.item] += point.amount;
-      acc[point.playerId].totalPoints += point.amount;
+      acc[playerId].items[itemKey] += point.amount;
+      acc[playerId].totalPoints += point.amount;
       
       return acc;
     }, {} as Record<string, { totalPoints: number, items: Record<string, number> }>);
@@ -85,14 +97,24 @@ export async function GET(req: Request) {
 
     return new NextResponse(
       JSON.stringify(result),
-      { status: 200 }
+      { 
+        status: 200,
+        headers: {
+          'Cache-Control': 'public, s-maxage=1, stale-while-revalidate=59'
+        }
+      }
     );
 
   } catch (error: any) {
     console.error("Points error:", error);
     return new NextResponse(
       JSON.stringify({ error: error.message }),
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      }
     );
   }
 } 

@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-static'
-export const revalidate = 0
+export const revalidate = false
 
 export async function GET(request: Request) {
   try {
@@ -29,12 +29,21 @@ export async function GET(request: Request) {
     return NextResponse.json({
       reservations,
       raids: uniqueRaids.map(r => r.raid)
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=1, stale-while-revalidate=59'
+      }
     })
   } catch (error) {
     console.error('Error fetching reservations:', error)
     return NextResponse.json(
       { error: 'Er is een fout opgetreden bij het ophalen van de reserveringen.' },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      }
     )
   }
 } 

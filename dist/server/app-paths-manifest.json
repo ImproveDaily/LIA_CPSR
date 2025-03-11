@@ -1,6 +1,4 @@
 {
-  "/api/reservations/route": "app/api/reservations/route.js",
-  "/api/points/route": "app/api/points/route.js",
-  "/page": "app/page.js",
-  "/login/page": "app/login/page.js"
+  "/login/page": "app/login/page.js",
+  "/page": "app/page.js"
 }
