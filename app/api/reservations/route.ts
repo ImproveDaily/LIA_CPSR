@@ -7,12 +7,12 @@ export const revalidate = false
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    const raid = searchParams.get('raid')
+    const raid = searchParams.get('raid') || 'Molten Core'
 
     const reservations = await prisma.reservation.findMany({
-      where: raid ? {
+      where: {
         raid: raid
-      } : undefined,
+      },
       include: {
         player: true,
       },
@@ -27,8 +27,10 @@ export async function GET(request: Request) {
     })
 
     return NextResponse.json({
-      reservations,
-      raids: uniqueRaids.map(r => r.raid)
+      data: {
+        reservations: reservations || [],
+        raids: uniqueRaids.map(r => r.raid)
+      }
     }, {
       headers: {
         'Cache-Control': 'public, s-maxage=1, stale-while-revalidate=59'
@@ -37,7 +39,13 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('Error fetching reservations:', error)
     return NextResponse.json(
-      { error: 'Er is een fout opgetreden bij het ophalen van de reserveringen.' },
+      { 
+        data: {
+          reservations: [],
+          raids: []
+        },
+        error: 'Er is een fout opgetreden bij het ophalen van de reserveringen.'
+      },
       { 
         status: 500,
         headers: {

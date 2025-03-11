@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "create-admin": "ts-node scripts/create-admin.ts",
-    "update-reservations": "ts-node scripts/update-reservations.ts"
+    "update-reservations": "ts-node scripts/update-reservations.ts",
+    "deploy": "next build && touch out/.nojekyll"
   },
   "dependencies": {
     "@hookform/resolvers": "latest",

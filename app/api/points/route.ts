@@ -48,15 +48,15 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
-    const raid = searchParams.get('raid')
+    const raid = searchParams.get('raid') || 'MC'
 
     // Haal alle punten op
     const points = await prisma.point.findMany({
-      where: raid ? {
+      where: {
         reason: {
           contains: raid
         }
-      } : undefined,
+      },
       include: {
         player: true
       },

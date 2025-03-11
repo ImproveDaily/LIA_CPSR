@@ -367,8 +367,19 @@ export function PointTracker() {
       const result = JSON.parse(responseText)
       console.log('Parsed JSON:', result)
       
+      // Als de response een data veld heeft, gebruik dat
+      if ('data' in result) {
+        return {
+          data: result.data as T,
+          error: 'error' in result ? {
+            message: String(result.error)
+          } : undefined,
+          statusCode: response.status
+        }
+      }
+      
       // Als de response een array is of direct een object zonder data/error structuur
-      if (Array.isArray(result) || !('data' in result)) {
+      if (Array.isArray(result) || !('error' in result)) {
         return {
           data: result as T,
           error: undefined,
@@ -376,18 +387,12 @@ export function PointTracker() {
         }
       }
       
-      // Anders, gebruik de standaard data/error structuur
+      // Als er een error is
       return {
-        data: 'data' in result ? (result.data as T) : null,
-        error: 'error' in result && result.error ? { 
-          message: String(
-            result.error && typeof result.error === 'object' && 'message' in result.error 
-              ? result.error.message 
-              : result.error
-          ),
-          ...(typeof result.error === 'object' ? result.error as Record<string, unknown> : {})
-        } : undefined,
-        message: 'message' in result ? String(result.message) : undefined,
+        data: null,
+        error: {
+          message: String(result.error)
+        },
         statusCode: response.status
       }
     } catch (err) {
