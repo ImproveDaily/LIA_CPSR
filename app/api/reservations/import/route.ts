@@ -74,107 +74,60 @@ export async function POST(req: Request) {
     }
 
     // Verwerk de gevalideerde records
-    const results = await Promise.all(
-      validRecords.map(async (record) => {
-        try {
-          // Zoek speler
-          const existingPlayer = await prisma.player.findFirst({
-            where: { name: record.Attendee }
-          });
+    for (const record of validRecords) {
+      const player = await prisma.player.findFirst({
+        where: { name: record.Attendee }
+      })
 
-          let player;
-          
-          // Update of maak nieuwe speler
-          try {
-            if (existingPlayer) {
-              player = await prisma.player.update({
-                where: { id: existingPlayer.id },
-                data: {
-                  playerClass: record.Class,
-                  role: record.Specialization
-                }
-              });
-            } else {
-              player = await prisma.player.create({
-                data: {
-                  name: record.Attendee,
-                  playerClass: record.Class,
-                  role: record.Specialization
-                }
-              });
-            }
-          } catch (error) {
-            console.error("Error bij speler aanmaken/updaten:", error);
-            throw error;
+      if (player) {
+        // Controleer of er al een reservering bestaat voor deze combinatie
+        const existingReservation = await prisma.reservation.findFirst({
+          where: {
+            playerId: player.id,
+            item: record.Item,
+            boss: record.Boss,
+            raid: raid
           }
+        })
 
-          console.log("Speler aangemaakt/bijgewerkt:", player);
+        if (!existingReservation) {
+          // Maak nieuwe reservering aan
+          await prisma.reservation.create({
+            data: {
+              playerId: player.id,
+              item: record.Item,
+              boss: record.Boss,
+              raid: raid,
+              date: new Date(record["Date (GMT)"])
+            }
+          })
 
-          // Maak een nieuwe reservering
-          let reservation;
+          // Voeg punten toe als ze nog niet bestaan voor deze combinatie
           try {
-            reservation = await prisma.reservation.create({
+            await prisma.point.create({
               data: {
                 playerId: player.id,
+                amount: 10,
                 item: record.Item,
                 boss: record.Boss,
                 raid: raid,
-                date: new Date(record["Date (GMT)"])
+                reason: raid
               }
-            });
+            })
           } catch (error) {
-            console.error("Error bij reservering aanmaken:", error);
-            throw error;
-          }
-
-          console.log("Reservering aangemaakt:", reservation);
-
-          // Als er punten zijn in het commentaar, voeg deze toe
-          if (record.Comment) {
-            const pointsMatch = record.Comment.match(/\+(\d+)/);
-            if (pointsMatch) {
-              const points = parseInt(pointsMatch[1]);
-              try {
-                const point = await prisma.point.create({
-                  data: {
-                    playerId: player.id,
-                    amount: points,
-                    reason: `Reservering voor ${record.Item} van ${record.Boss} in ${raid}`
-                  }
-                });
-                console.log("Punten toegevoegd:", point);
-              } catch (error) {
-                console.error("Error bij punten toevoegen:", error);
-                // We gaan door zelfs als punten toevoegen mislukt
-              }
+            // Als er al punten bestaan voor deze combinatie (unique constraint error), negeer de error
+            if (!(error instanceof Error && error.message.includes("unique constraint"))) {
+              throw error
             }
           }
-
-          return {
-            success: true,
-            player: record.Attendee,
-            item: record.Item,
-            raid: raid
-          };
-        } catch (error: any) {
-          console.error("Error bij verwerken record:", error)
-          return {
-            success: false,
-            player: record.Attendee,
-            item: record.Item,
-            error: error.message
-          }
         }
-      })
-    )
-
-    const successfulResults = results.filter(r => r.success)
-    console.log("Aantal succesvolle imports:", successfulResults.length)
+      }
+    }
 
     return new NextResponse(JSON.stringify({
       message: "Import voltooid",
       totalRecords: validRecords.length,
-      results
+      results: validRecords
     }), {
       status: 200,
       headers: { "Content-Type": "application/json" }

@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "@/components/ui/use-toast"
+import { Error } from "@/components/ui/error"
 
 // Class colors for WoW
 const classColors: Record<string, string> = {
@@ -198,7 +199,7 @@ export function PointTracker() {
   )
 
   if (loading) return <div>Laden...</div>
-  if (error) return <div>Error: {error}</div>
+  if (error) return <Error message={error} />
 
   return (
     <div className="space-y-4">

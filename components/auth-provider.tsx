@@ -25,6 +25,7 @@ const AuthContext = createContext<AuthContextType | null>(null)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
   const router = useRouter()
 
   // Check if user is already logged in on mount
@@ -32,28 +33,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const storedUser = localStorage.getItem("wow-cpsr-user")
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser))
+        const parsedUser = JSON.parse(storedUser)
+        setUser(parsedUser)
         setIsAuthenticated(true)
       } catch (error) {
         console.error("Failed to parse stored user", error)
         localStorage.removeItem("wow-cpsr-user")
+        setIsAuthenticated(false)
       }
     }
+    setIsLoading(false)
   }, [])
 
   const login = async (username: string, password: string) => {
-    if (username === 'admin' && password === 'admin') {
-      localStorage.setItem('isAuthenticated', 'true')
-      setIsAuthenticated(true)
-      return true
+    try {
+      if (username === 'admin' && password === 'admin') {
+        const newUser = {
+          id: '1',
+          username: 'admin',
+          role: 'admin' as UserRole
+        }
+        setUser(newUser)
+        setIsAuthenticated(true)
+        localStorage.setItem("wow-cpsr-user", JSON.stringify(newUser))
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error("Login failed", error)
+      return false
     }
-    return false
   }
 
   const logout = () => {
     setUser(null)
     localStorage.removeItem("wow-cpsr-user")
-    localStorage.removeItem('isAuthenticated')
     setIsAuthenticated(false)
     router.push('/login')
   }

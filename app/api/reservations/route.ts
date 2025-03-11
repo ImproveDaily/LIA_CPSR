@@ -9,10 +9,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const raid = searchParams.get('raid')
 
-    const query = raid ? { raid } : {}
-
     const reservations = await prisma.reservation.findMany({
-      where: query,
+      where: raid ? {
+        raid: raid
+      } : undefined,
       include: {
         player: true,
       },

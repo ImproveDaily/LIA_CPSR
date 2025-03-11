@@ -12,13 +12,6 @@ import { ProtectedPage } from "@/components/protected-page"
 export default function Home() {
   const { isAuthenticated } = useAuth()
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated) {
-      redirect("/login")
-    }
-  }, [isAuthenticated])
-
   if (!isAuthenticated) return null
 
   return (
@@ -50,8 +43,8 @@ export default function Home() {
                 </CardContent>
               </Card>
 
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card>
+              <div className="grid gap-6 md:grid-cols-12">
+                <Card className="md:col-span-4">
                   <CardHeader>
                     <CardTitle>Import Reservations</CardTitle>
                     <CardDescription>Import reservations from the raidres.fly.dev CSV export</CardDescription>
@@ -60,11 +53,10 @@ export default function Home() {
                     <ReservationImport />
                   </CardContent>
                 </Card>
-
-                <Card>
+                <Card className="md:col-span-8">
                   <CardHeader>
                     <CardTitle>Current Point Standings</CardTitle>
-                    <CardDescription>View the current point totals for all player reservations</CardDescription>
+                    <CardDescription>Overview of current point standings per player and item</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <PointTracker />

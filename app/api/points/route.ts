@@ -47,68 +47,61 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url)
+    const raid = searchParams.get('raid')
+
     // Haal alle punten op
     const points = await prisma.point.findMany({
+      where: raid ? {
+        reason: {
+          contains: raid
+        }
+      } : undefined,
+      include: {
+        player: true
+      },
       orderBy: {
-        createdAt: "desc"
+        createdAt: 'desc'
       }
     });
 
-    // Groepeer punten per speler en item
+    // Groepeer punten per speler
     const pointsByPlayer = points.reduce((acc, point) => {
       const playerId = point.playerId.toString();
       if (!acc[playerId]) {
         acc[playerId] = {
+          playerId,
+          playerName: point.player.name,
           totalPoints: 0,
-          items: {}
+          items: []
         };
       }
-      
-      const itemKey = point.item || 'unknown';
-      if (!acc[playerId].items[itemKey]) {
-        acc[playerId].items[itemKey] = 0;
-      }
-      
-      acc[playerId].items[itemKey] += point.amount;
-      acc[playerId].totalPoints += point.amount;
-      
-      return acc;
-    }, {} as Record<string, { totalPoints: number, items: Record<string, number> }>);
 
-    // Haal speler informatie op
-    const players = await prisma.player.findMany({
-      where: {
-        id: {
-          in: Object.keys(pointsByPlayer)
+      acc[playerId].totalPoints += point.amount;
+      if (point.item) {
+        const existingItem = acc[playerId].items.find((i: { item: string, points: number }) => i.item === point.item);
+        if (existingItem) {
+          existingItem.points += point.amount;
+        } else {
+          acc[playerId].items.push({ item: point.item, points: point.amount });
         }
       }
-    });
 
-    // Combineer speler informatie met punten
-    const result = players.map(player => ({
-      playerId: player.id,
-      playerName: player.name,
-      totalPoints: pointsByPlayer[player.id].totalPoints,
-      items: Object.entries(pointsByPlayer[player.id].items).map(([item, points]) => ({
-        item,
-        points
-      }))
-    }));
+      return acc;
+    }, {} as Record<string, any>);
 
-    return new NextResponse(
-      JSON.stringify(result),
-      { 
-        status: 200,
+    return NextResponse.json(
+      Object.values(pointsByPlayer),
+      {
         headers: {
           'Cache-Control': 'public, s-maxage=1, stale-while-revalidate=59'
         }
       }
     );
-
-  } catch (error: any) {
+  } catch (error) {
     console.error("Points error:", error);
-    return new NextResponse(
-      JSON.stringify({ error: error.message }),
+    return NextResponse.json(
+      { error: "Er is een fout opgetreden bij het ophalen van de punten." },
       { 
         status: 500,
         headers: {

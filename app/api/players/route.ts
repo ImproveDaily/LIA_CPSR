@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-static'
+export const revalidate = false
+
 export async function GET() {
   try {
     const players = await prisma.player.findMany({
