@@ -7,12 +7,8 @@ try {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  output: 'export',  // Static HTML export
+  distDir: 'dist',   // Build output directory
   images: {
     unoptimized: true,
   },
@@ -21,6 +17,14 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  // Add basePath for GitHub Pages
+  basePath: process.env.NODE_ENV === 'production' ? '/LIA_CPSR' : '',
 }
 
 mergeConfig(nextConfig, userConfig)

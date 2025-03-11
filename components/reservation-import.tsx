@@ -11,6 +11,7 @@ import { AlertCircle, FileUp, Check } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RAIDS, type Raid } from "@/lib/constants"
+import { useRouter } from "next/navigation"
 
 type CSVReservation = {
   ID: string
@@ -30,6 +31,7 @@ export function ReservationImport() {
   const [importStatus, setImportStatus] = useState<"idle" | "success" | "error">("idle")
   const [importMessage, setImportMessage] = useState("")
   const [importedData, setImportedData] = useState<CSVReservation[]>([])
+  const router = useRouter()
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -73,38 +75,29 @@ export function ReservationImport() {
         body: formData,
       })
 
-      const result = await response.json()
+      if (response.ok) {
+        setImportStatus("success")
+        setImportMessage("Bestand succesvol geüpload")
+        router.refresh()
+      } else {
+        const data = await response.json()
+        setImportStatus("error")
+        setImportMessage(data.error || "Er is een fout opgetreden bij het uploaden")
 
-      if (!response.ok) {
-        throw new Error(result.error || "Er is een fout opgetreden bij het importeren")
-      }
-
-      setImportedData(result.results.filter((r: any) => r.success))
-      setImportStatus("success")
-      setImportMessage(`${result.results.filter((r: any) => r.success).length} reserveringen succesvol geïmporteerd`)
-
-      toast({
-        title: "Import succesvol",
-        description: `${result.results.filter((r: any) => r.success).length} reserveringen geïmporteerd`,
-      })
-
-      // Toon waarschuwingen voor mislukte imports
-      const failures = result.results.filter((r: any) => !r.success)
-      if (failures.length > 0) {
         toast({
-          title: "Waarschuwing",
-          description: `${failures.length} reserveringen konden niet worden geïmporteerd`,
+          title: "Import mislukt",
+          description: data.error || "Er is een fout opgetreden bij het uploaden",
           variant: "destructive",
         })
       }
     } catch (error: any) {
       console.error("Import error:", error)
       setImportStatus("error")
-      setImportMessage(error.message || "Er is een fout opgetreden bij het importeren van het bestand")
+      setImportMessage(error.message || "Er is een fout opgetreden bij het uploaden")
 
       toast({
         title: "Import mislukt",
-        description: error.message || "Er is een fout opgetreden bij het verwerken van het CSV bestand",
+        description: error.message || "Er is een fout opgetreden bij het uploaden",
         variant: "destructive",
       })
     } finally {
