@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { toast } from "@/components/ui/use-toast"
 
 // Class colors for WoW
 const classColors: Record<string, string> = {
@@ -124,13 +125,20 @@ export function PointTracker() {
 
   const fetchPoints = async () => {
     try {
-      const response = await fetch("/api/points")
-      if (!response.ok) throw new Error("Failed to fetch points")
-      
+      const response = await fetch('/api/points')
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
       const data = await response.json()
       setPlayerPoints(data)
-    } catch (err) {
-      console.error("Error fetching points:", err)
+    } catch (error) {
+      console.error('Error fetching points:', error)
+      // Toon een gebruiksvriendelijke foutmelding
+      toast({
+        title: "Fout bij ophalen van punten",
+        description: "Er is een probleem opgetreden bij het ophalen van de punten. Probeer het later opnieuw.",
+        variant: "destructive",
+      })
     }
   }
 

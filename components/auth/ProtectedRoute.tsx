@@ -1,35 +1,38 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (status === 'loading') return;
+    // Check authentication status from localStorage
+    const authStatus = localStorage.getItem('isAuthenticated') === 'true';
+    setIsAuthenticated(authStatus);
 
-    if (!session && pathname !== '/login') {
+    if (!authStatus && pathname !== '/login') {
       router.push('/login');
     }
 
-    if (session && pathname === '/login') {
+    if (authStatus && pathname === '/login') {
       router.push('/');
     }
-  }, [session, status, router, pathname]);
+  }, [pathname, router]);
 
-  if (status === 'loading') {
+  // Toon loading state tijdens de initiële check
+  if (isAuthenticated === null) {
     return <div>Loading...</div>;
   }
 
-  if (!session && pathname !== '/login') {
+  // Toon geen content als niet ingelogd en niet op login pagina
+  if (!isAuthenticated && pathname !== '/login') {
     return null;
   }
 
