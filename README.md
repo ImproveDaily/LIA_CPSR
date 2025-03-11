@@ -1,1 +1,1 @@
-# LIA_CPSR
+# LIA_CPSR WOW loot tracker
