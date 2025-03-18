@@ -1,0 +1,11 @@
+{
+  "env": {
+    "DATABASE_URL": "mongodb+srv://liawow:ucbPyQ%40G5K8Pr@liawow.7jay4.mongodb.net/lia_cpsr?retryWrites=true&w=majority&authSource=admin&authMechanism=SCRAM-SHA-1&ssl=true&tlsAllowInvalidCertificates=true"
+  },
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ]
+} 
