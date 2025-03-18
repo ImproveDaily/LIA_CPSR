@@ -257,6 +257,7 @@ export function PointTracker() {
           item: reservation.item,
           boss: reservation.boss,
           raid: reservation.raid,
+          amount: 10
         }),
       })
 
