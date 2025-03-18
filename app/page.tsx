@@ -6,11 +6,19 @@ import { PointTracker } from "@/components/point-tracker"
 import { ReservationImport } from "@/components/reservation-import"
 import { redirect } from "next/navigation"
 import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { AppHeader } from "@/components/app-header"
 import { ProtectedPage } from "@/components/protected-page"
 
 export default function Home() {
   const { isAuthenticated, isAdmin } = useAuth()
+  const router = useRouter()
+  
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/login')
+    }
+  }, [isAuthenticated, router])
 
   if (!isAuthenticated) return null
 

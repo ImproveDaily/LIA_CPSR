@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
-  basePath: '/LIA_CPSR',
+  // Bij ontwikkeling gebruiken we geen static export
+  ...(process.env.NODE_ENV === 'development' ? {} : { output: 'export' }),
   images: {
     unoptimized: true,
   },
