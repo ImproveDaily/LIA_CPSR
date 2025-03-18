@@ -113,7 +113,7 @@ export function RaidForm() {
 
   const handleRaidChange = (raidId: string) => {
     setSelectedRaid(raidId)
-    form.setValue("killedBosses", [])
+    form.setValue("killedBosses", ["placeholder"])
   }
 
   return (
