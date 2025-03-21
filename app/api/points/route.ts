@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = 'force-static'
-export const revalidate = false
-
 export async function POST(req: Request) {
   try {
     const { playerId, amount, item, boss, raid } = await req.json();
@@ -40,7 +37,7 @@ export async function POST(req: Request) {
       { 
         status: 200,
         headers: {
-          'Cache-Control': 'public, s-maxage=1, stale-while-revalidate=59'
+          'Content-Type': 'application/json'
         }
       }
     );
@@ -52,7 +49,7 @@ export async function POST(req: Request) {
       { 
         status: 500,
         headers: {
-          'Cache-Control': 'no-store'
+          'Content-Type': 'application/json'
         }
       }
     );

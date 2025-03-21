@@ -1,9 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
-export const dynamic = 'force-static'
-export const revalidate = false
-
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -33,7 +30,7 @@ export async function GET(request: Request) {
       }
     }, {
       headers: {
-        'Cache-Control': 'public, s-maxage=1, stale-while-revalidate=59'
+        'Content-Type': 'application/json'
       }
     })
   } catch (error) {
@@ -49,7 +46,7 @@ export async function GET(request: Request) {
       { 
         status: 500,
         headers: {
-          'Cache-Control': 'no-store'
+          'Content-Type': 'application/json'
         }
       }
     )
