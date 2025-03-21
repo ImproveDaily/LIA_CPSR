@@ -1,11 +1,39 @@
 {
-  "env": {
-    "DATABASE_URL": "mongodb+srv://liawow:ucbPyQ%40G5K8Pr@liawow.7jay4.mongodb.net/lia_cpsr?retryWrites=true&w=majority&authSource=admin&authMechanism=SCRAM-SHA-1&ssl=true&tlsAllowInvalidCertificates=true"
-  },
   "builds": [
     {
       "src": "package.json",
       "use": "@vercel/next"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.liawow.com"
+        }
+      ],
+      "destination": "https://liawow.com"
     }
   ]
 } 

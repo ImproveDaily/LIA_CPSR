@@ -1,14 +1,29 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Bij ontwikkeling gebruiken we geen static export
-  ...(process.env.NODE_ENV === 'development' ? {} : { output: 'export' }),
+  output: 'standalone',
+  poweredByHeader: false,
+  compress: true,
+  reactStrictMode: true,
+  swcMinify: true,
   images: {
-    unoptimized: true,
+    domains: ['liawow.com'],
   },
-  experimental: {
-    serverActions: {
-      allowedOrigins: ["localhost:3000", "liawow.com"]
-    }
+  headers: async () => {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on'
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload'
+          }
+        ],
+      },
+    ]
   }
 }
 
