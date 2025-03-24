@@ -22,8 +22,23 @@
           "value": "1; mode=block"
         }
       ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=60, stale-while-revalidate=30"
+        }
+      ]
     }
   ],
+  "functions": {
+    "api/**/*.ts": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  },
   "rewrites": [
     {
       "source": "/api/:path*",
@@ -32,14 +47,15 @@
   ],
   "redirects": [
     {
-      "source": "/",
+      "source": "/:path*",
       "has": [
         {
           "type": "host",
           "value": "www.liawow.com"
         }
       ],
-      "destination": "https://liawow.com"
+      "destination": "https://liawow.com/:path*",
+      "permanent": true
     }
   ]
 } 
