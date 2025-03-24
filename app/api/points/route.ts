@@ -121,6 +121,7 @@ export async function DELETE(req: Request) {
 export async function GET() {
   try {
     const db = await prisma.$connect();
+    console.log('Database connected successfully');
     
     // Timeout na 5 seconden
     const timeoutPromise = new Promise((_, reject) => {
@@ -140,7 +141,24 @@ export async function GET() {
       },
     });
 
-    const points = await Promise.race([pointsPromise, timeoutPromise]);
+    const points = await Promise.race([pointsPromise, timeoutPromise]) as Array<{
+      id: string;
+      playerId: string;
+      amount: number;
+      item: string;
+      reason: string;
+      boss: string;
+      raid: string;
+      createdAt: Date;
+      updatedAt: Date;
+      player: {
+        name: string;
+        playerClass: string;
+        role: string;
+      };
+    }>;
+    
+    console.log(`Successfully fetched ${points.length} points`);
 
     return NextResponse.json(
       { data: points, error: null },
@@ -168,6 +186,11 @@ export async function GET() {
       }
     );
   } finally {
-    await prisma.$disconnect();
+    try {
+      await prisma.$disconnect();
+      console.log('Database disconnected successfully');
+    } catch (error) {
+      console.error('Error disconnecting from database:', error);
+    }
   }
 } 
