@@ -118,75 +118,54 @@ export async function DELETE(req: Request) {
   }
 }
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url)
-    const raid = searchParams.get('raid') || 'MC'
-
-    // Haal alle punten op
-    const points = await prisma.point.findMany({
-      where: {
-        reason: {
-          contains: raid
-        }
-      },
-      include: {
-        player: true
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
+    const db = await prisma.$connect();
+    
+    // Timeout na 5 seconden
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database query timeout')), 5000);
     });
 
-    // Groepeer punten per speler
-    const pointsByPlayer = points.reduce((acc, point) => {
-      const playerId = point.playerId.toString();
-      if (!acc[playerId]) {
-        acc[playerId] = {
-          playerId,
-          playerName: point.player.name,
-          totalPoints: 0,
-          items: []
-        };
-      }
+    const pointsPromise = prisma.point.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        player: {
+          select: {
+            name: true,
+            playerClass: true,
+            role: true,
+          },
+        },
+      },
+    });
 
-      acc[playerId].totalPoints += point.amount;
-      if (point.item) {
-        const existingItem = acc[playerId].items.find((i: { item: string, points: number }) => i.item === point.item);
-        if (existingItem) {
-          existingItem.points += point.amount;
-        } else {
-          acc[playerId].items.push({ item: point.item, points: point.amount });
-        }
-      }
-
-      return acc;
-    }, {} as Record<string, any>);
+    const points = await Promise.race([pointsPromise, timeoutPromise]);
 
     return NextResponse.json(
+      { data: points, error: null },
       {
-        data: Object.values(pointsByPlayer),
-        error: null
-      },
-      {
+        status: 200,
         headers: {
-          'Cache-Control': 'public, s-maxage=1, stale-while-revalidate=59'
-        }
+          'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=59',
+        },
       }
     );
   } catch (error) {
-    console.error("Points error:", error);
+    console.error('Error fetching points:', error);
     return NextResponse.json(
       { 
-        data: [],
-        error: "Er is een fout opgetreden bij het ophalen van de punten."
+        data: [], 
+        error: error instanceof Error ? error.message : 'Er is een fout opgetreden bij het ophalen van de punten' 
       },
-      { 
+      {
         status: 500,
         headers: {
-          'Cache-Control': 'no-store'
-        }
+          'Cache-Control': 'no-store',
+        },
       }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 } 

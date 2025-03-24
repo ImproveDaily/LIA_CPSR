@@ -1,57 +1,54 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url)
-    const raid = searchParams.get('raid') || 'Molten Core'
+    const db = await prisma.$connect();
+    
+    // Timeout na 5 seconden
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database query timeout')), 5000);
+    });
 
-    const reservations = await prisma.reservation.findMany({
-      where: {
-        raid: raid
-      },
+    const reservationsPromise = prisma.reservation.findMany({
+      orderBy: { createdAt: 'desc' },
       include: {
-        player: true,
+        player: {
+          select: {
+            name: true,
+            playerClass: true,
+            role: true,
+          },
+        },
       },
-      orderBy: {
-        date: 'desc'
-      }
-    })
+    });
 
-    // Haal alle beschikbare raids op
-    const uniqueRaids = await prisma.reservation.groupBy({
-      by: ['raid']
-    })
+    const reservations = await Promise.race([reservationsPromise, timeoutPromise]);
 
-    return NextResponse.json({
-      data: {
-        reservations: reservations || [],
-        raids: uniqueRaids.map(r => r.raid)
-      },
-      error: null
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, s-maxage=1, stale-while-revalidate=59'
+    return NextResponse.json(
+      { data: reservations, error: null },
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=59',
+        },
       }
-    })
+    );
   } catch (error) {
-    console.error('Error fetching reservations:', error)
+    console.error('Error fetching reservations:', error);
     return NextResponse.json(
       { 
-        data: {
-          reservations: [],
-          raids: []
-        },
-        error: 'Er is een fout opgetreden bij het ophalen van de reserveringen.'
+        data: [], 
+        error: error instanceof Error ? error.message : 'Er is een fout opgetreden bij het ophalen van de reserveringen' 
       },
-      { 
+      {
         status: 500,
         headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-store'
-        }
+          'Cache-Control': 'no-store',
+        },
       }
-    )
+    );
+  } finally {
+    await prisma.$disconnect();
   }
 } 
