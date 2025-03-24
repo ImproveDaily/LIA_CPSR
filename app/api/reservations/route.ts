@@ -27,10 +27,12 @@ export async function GET(request: Request) {
       data: {
         reservations: reservations || [],
         raids: uniqueRaids.map(r => r.raid)
-      }
+      },
+      error: null
     }, {
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, s-maxage=1, stale-while-revalidate=59'
       }
     })
   } catch (error) {
@@ -46,7 +48,8 @@ export async function GET(request: Request) {
       { 
         status: 500,
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store'
         }
       }
     )

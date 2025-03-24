@@ -164,7 +164,10 @@ export async function GET(req: Request) {
     }, {} as Record<string, any>);
 
     return NextResponse.json(
-      Object.values(pointsByPlayer),
+      {
+        data: Object.values(pointsByPlayer),
+        error: null
+      },
       {
         headers: {
           'Cache-Control': 'public, s-maxage=1, stale-while-revalidate=59'
@@ -174,7 +177,10 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error("Points error:", error);
     return NextResponse.json(
-      { error: "Er is een fout opgetreden bij het ophalen van de punten." },
+      { 
+        data: [],
+        error: "Er is een fout opgetreden bij het ophalen van de punten."
+      },
       { 
         status: 500,
         headers: {
